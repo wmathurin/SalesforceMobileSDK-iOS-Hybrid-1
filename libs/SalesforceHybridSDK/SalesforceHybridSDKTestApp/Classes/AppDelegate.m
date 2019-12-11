@@ -83,27 +83,22 @@
 }
 
 - (NSString *) evalJS:(NSString *) js {
-    if (self.viewController.useUIWebView) {
-        NSString *jsResult = [(UIWebView *)(self.viewController.webView) stringByEvaluatingJavaScriptFromString:js];
-        return jsResult;
-    } else {
-        __block NSString *resultString = nil;
-        __block BOOL finished = NO;
-        [(WKWebView *)(self.viewController.webView) evaluateJavaScript:js completionHandler:^(id result, NSError *error) {
-            if (error == nil) {
-                if (result != nil) {
-                    resultString = [NSString stringWithFormat:@"%@", result];
-                }
-            } else {
-                [SFLogger d:[self class]  format:@"evaluateJavaScript error : %@", error.localizedDescription];
+    __block NSString *resultString = nil;
+    __block BOOL finished = NO;
+    [(WKWebView *)(self.viewController.webView) evaluateJavaScript:js completionHandler:^(id result, NSError *error) {
+        if (error == nil) {
+            if (result != nil) {
+                resultString = [NSString stringWithFormat:@"%@", result];
             }
-            finished = YES;
-        }];
-        while (!finished) {
-            [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
+        } else {
+            [SFLogger d:[self class]  format:@"evaluateJavaScript error : %@", error.localizedDescription];
         }
-        return resultString;
+        finished = YES;
+    }];
+    while (!finished) {
+        [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
     }
+    return resultString;
 }
 
 - (void)userDidLogout {
@@ -125,7 +120,7 @@
         }];
         [self.viewController presentViewController:userSwitchVc animated:YES completion:NULL];
     } else if ([[SFUserAccountManager sharedInstance].allUserAccounts count] == 1) {
-        [SFUserAccountManager sharedInstance].currentUser = ([SFUserAccountManager sharedInstance].allUserAccounts)[0];
+        [[SFUserAccountManager sharedInstance] switchToUser:[SFUserAccountManager sharedInstance].allUserAccounts[0]];
         [self initializeAppViewState];
     } else {
         [self initializeAppViewState];
